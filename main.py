@@ -12,7 +12,6 @@ app.add_middleware(CORSMiddleware,
     allow_origins=[os.getenv("FRONTEND_URL")],
     allow_methods=["*"], allow_headers=["*"])
 
-print(os.getenv("FRONTEND_URL"))  
 # Tool expuesta
 @app.get("/invoices/{dni}")
 def get_invoices(dni: str):
