@@ -1,32 +1,52 @@
-# backend/main.py
-import sqlite3
+import os
 from fastapi import FastAPI, Request
-from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi_mcp import FastApiMCP
 from sse_starlette.sse import EventSourceResponse
-from agent import agent  # Tu instancia de tiny-agent, con las tools definidas
+from dotenv import load_dotenv
+from agent import agent, get_invoices_by_dni
+
+# Carga variables de entorno
+o = load_dotenv()
 
 app = FastAPI()
 
-# Conexión a la base de datos (puedes mejorar con pool si hace falta)
-def get_db():
-    conn = sqlite3.connect("demo.db", check_same_thread=False)
-    return conn
+# Configurar CORS para permitir llamadas solo desde el frontend
+domains = [os.getenv("FRONTEND_URL")]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=domains,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+# Montar el servidor MCP que expone tus endpoints como tools
+mcp = FastApiMCP(app)
+# Por defecto monta en "/mcp"
+mcp.mount()
+
+# Endpoint REST que también puedes llamar directamente o desde el agente
+@app.get("/invoices/{dni}")
+def read_invoices(dni: str):
+    return get_invoices_by_dni(dni)
+
+# Endpoint de chat con streaming SSE que invoca al agente MCP
 @app.post("/chat")
 async def chat(request: Request):
-    data = await request.json()
-    message = data.get("message", "")
+    payload = await request.json()
+    message = payload.get("message", "")
 
-    # Función generadora de tokens
     async def event_generator():
-        # tiny-agent puede dar streaming si lo configuras así
         for token in agent.stream(message):
             yield {"event": "message", "data": token}
-        # Finaliza el stream con un evento de cierre
         yield {"event": "end"}
 
     return EventSourceResponse(event_generator())
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", 8000)),
+    )

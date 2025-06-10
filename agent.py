@@ -1,15 +1,17 @@
 import sqlite3
-from tiny_agent import Agent, Tool
+import os
+from huggingface_hub.inference._mcp.agent import Agent, Tool
+from dotenv import load_dotenv
 
-# Tool para obtener facturas por DNI
-# Devuelve una lista de dicts con id, fecha, importe y estado
+# Carga variables de entorno
+load_dotenv()
 
+# Tool: consulta facturas por DNI
 def get_invoices_by_dni(dni: str):
     conn = sqlite3.connect("demo.db", check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT id, fecha, importe, estado FROM facturas WHERE dni_abonado = ?",
-        (dni,)
+        "SELECT id, fecha, importe, estado FROM facturas WHERE dni_abonado = ?", (dni,)
     )
     rows = cursor.fetchall()
     conn.close()
@@ -18,21 +20,28 @@ def get_invoices_by_dni(dni: str):
         for r in rows
     ]
 
-# Lista de tools disponibles
+# Definición de herramientas para el agente MCP local
 tools = [
     Tool(
         name="get_invoices_by_dni",
         func=get_invoices_by_dni,
-        description="Obtiene las facturas del abonado dado su DNI, devolviendo id, fecha, importe y estado."
+        description="Consulta facturas de un abonado por su DNI (id, fecha, importe, estado)."
     ),
-    # puedes añadir más tools aquí
 ]
 
-# Configuración del agente
+# Instancia del agente MCP que se conecta al LLM remoto
 agent = Agent(
-    llm="openai/gpt-3.5-turbo",  # o un modelo local si prefieres
+    provider=os.getenv("MCP_PROVIDER"),
+    model=os.getenv("MCP_MODEL"),
+    servers=[{
+        "type": "stdio",
+        "config": {
+            "command": "npx",
+            "args": ["mcp-remote", os.getenv("MCP_SERVER_URL")]
+        }
+    }],
     tools=tools,
-    stream=True,                    # habilita streaming de tokens
+    stream=True,
     temperature=0.0,
     max_tokens=512,
 )
