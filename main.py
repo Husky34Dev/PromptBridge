@@ -1,5 +1,4 @@
-import os
-import sqlite3
+import os, sqlite3
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_mcp import FastApiMCP
@@ -8,48 +7,34 @@ from dotenv import load_dotenv
 from agent import agent
 
 load_dotenv()
-
 app = FastAPI()
-
-# Configurar CORS para frontend
-app.add_middleware(
-    CORSMiddleware,
+app.add_middleware(CORSMiddleware,
     allow_origins=[os.getenv("FRONTEND_URL")],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    allow_methods=["*"], allow_headers=["*"])
 
-# Tool real para exponer a MCP (consulta facturas)
+# Tool expuesta
 @app.get("/invoices/{dni}")
-def get_invoices_by_dni(dni: str):
+def get_invoices(dni: str):
     conn = sqlite3.connect("demo.db", check_same_thread=False)
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT id, fecha, importe, estado FROM facturas WHERE dni_abonado = ?", (dni,)
-    )
-    rows = cursor.fetchall()
+    cur = conn.cursor()
+    cur.execute("SELECT id, fecha, importe, estado FROM facturas WHERE dni_abonado = ?", (dni,))
+    rows = cur.fetchall()
     conn.close()
-    return [
-        {"id": r[0], "fecha": r[1], "importe": r[2], "estado": r[3]}
-        for r in rows
-    ]
+    return [{"id": r[0],"fecha": r[1],"importe": r[2],"estado": r[3]} for r in rows]
 
-# Montar servidor MCP en /mcp
-tools = FastApiMCP(app)
-tools.mount()
+# Montar MCP
+FastApiMCP(app).mount()
 
-# Endpoint de chat
+# SSE chat
 @app.post("/chat")
 async def chat(request: Request):
     data = await request.json()
-    message = data.get("message", "")
-
-    async def event_generator():
-        for token in agent.stream(message):
+    msg = data.get("message", "")
+    async def gen():
+        for token in agent.stream(msg):
             yield {"event": "message", "data": token}
         yield {"event": "end"}
-
-    return EventSourceResponse(event_generator())
+    return EventSourceResponse(gen())
 
 if __name__ == "__main__":
     import uvicorn
