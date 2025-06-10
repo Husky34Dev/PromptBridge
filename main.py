@@ -9,7 +9,7 @@ from agent import agent
 load_dotenv()
 app = FastAPI()
 app.add_middleware(CORSMiddleware,
-    allow_origins=[os.getenv("FRONTEND_URL")],
+    allow_origins=[*],
     allow_methods=["*"], allow_headers=["*"])
 
 # Tool expuesta
