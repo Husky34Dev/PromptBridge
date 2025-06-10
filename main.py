@@ -1,40 +1,48 @@
 import os
+import sqlite3
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_mcp import FastApiMCP
 from sse_starlette.sse import EventSourceResponse
 from dotenv import load_dotenv
-from agent import agent, get_invoices_by_dni
+from agent import agent
 
-# Carga variables de entorno
-o = load_dotenv()
+load_dotenv()
 
 app = FastAPI()
 
-# Configurar CORS para permitir llamadas solo desde el frontend
-domains = [os.getenv("FRONTEND_URL")]
+# Configurar CORS para frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=domains,
+    allow_origins=[os.getenv("FRONTEND_URL")],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Montar el servidor MCP que expone tus endpoints como tools
-mcp = FastApiMCP(app)
-# Por defecto monta en "/mcp"
-mcp.mount()
-
-# Endpoint REST que también puedes llamar directamente o desde el agente
+# Tool real para exponer a MCP (consulta facturas)
 @app.get("/invoices/{dni}")
-def read_invoices(dni: str):
-    return get_invoices_by_dni(dni)
+def get_invoices_by_dni(dni: str):
+    conn = sqlite3.connect("demo.db", check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id, fecha, importe, estado FROM facturas WHERE dni_abonado = ?", (dni,)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    return [
+        {"id": r[0], "fecha": r[1], "importe": r[2], "estado": r[3]}
+        for r in rows
+    ]
 
-# Endpoint de chat con streaming SSE que invoca al agente MCP
+# Montar servidor MCP en /mcp
+tools = FastApiMCP(app)
+tools.mount()
+
+# Endpoint de chat
 @app.post("/chat")
 async def chat(request: Request):
-    payload = await request.json()
-    message = payload.get("message", "")
+    data = await request.json()
+    message = data.get("message", "")
 
     async def event_generator():
         for token in agent.stream(message):
@@ -45,8 +53,4 @@ async def chat(request: Request):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=int(os.getenv("PORT", 8000)),
-    )
+    uvicorn.run("main:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
