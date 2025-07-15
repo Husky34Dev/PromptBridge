@@ -1,0 +1,4 @@
+# Logo placeholder
+# Reemplazar este archivo con el logo real del cliente
+# Formato recomendado: PNG, 128x128px o mayor
+# Asegurarse de que sea cuadrado para mejor visualización

@@ -1,0 +1,9 @@
+{
+  "company_name": "Empresa Ejemplo",
+  "primary_color": "#2563eb",
+  "secondary_color": "#64748b",
+  "logo_path": "/static/assets/logo.png",
+  "favicon_path": "/static/assets/favicon.ico",
+  "contact_email": "soporte@empresa.com",
+  "support_phone": "+34 900 123 456"
+}

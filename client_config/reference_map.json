@@ -1,0 +1,7 @@
+{
+  ".*abonado.*": "dni",
+  ".*cliente.*": "dni",
+  ".*su dirección.*|.*dirección del abonado.*": "direccion",
+  ".*su teléfono.*|.*teléfono del abonado.*": "telefono",
+  ".*el clima.*|.*el tiempo.*|.*weather.*": "direccion"
+}

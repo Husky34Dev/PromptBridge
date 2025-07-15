@@ -1,0 +1,676 @@
+/* --- Variables y Estilos Globales --- */
+:root {
+    --primary-color: #007bff;
+    --primary-hover: #0056b3;
+    --bg-color: #f7f9fc;
+    --surface-color: #ffffff;
+    --sidebar-bg: #0f172a; /* Azul oscuro para la barra lateral */
+    --sidebar-text: #cbd5e1;
+    --sidebar-header-text: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+    
+    --user-msg-bg: var(--primary-color);
+    --user-msg-text: #ffffff;
+    
+    --bot-msg-bg: #e9ecef;
+    --bot-msg-text: #343a40;
+    
+    --card-bg: #ffffff;
+    --card-border: #e0e0e0;
+    --card-key-color: var(--primary-color);
+
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --border-radius: 12px;
+    --shadow: 0 6px 16px rgba(0, 0, 0, 0.07);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
+/* --- Nueva Estructura de Página --- */
+.page-container {
+    display: flex;
+    height: 100vh;
+}
+
+.sidebar {
+    width: 280px;
+    background-color: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    flex-shrink: 0;
+}
+
+.sidebar-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.sidebar-header h1 {
+    color: var(--sidebar-header-text);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.sidebar-header p {
+    font-size: 0.9rem;
+    color: var(--sidebar-text);
+}
+
+.sidebar-content {
+    flex-grow: 1;
+}
+
+.role-selector {
+    margin-bottom: 1.5rem;
+}
+
+.role-selector label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.role-selector select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    background-color: #1e293b;
+    color: var(--sidebar-text);
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.role-selector select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
+}
+
+.info-panel {
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    font-size: 0.85rem;
+}
+
+.info-panel h3 {
+    color: var(--sidebar-header-text);
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-footer {
+    text-align: center;
+    font-size: 0.8rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #334155;
+}
+
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--surface-color);
+    padding: 1.5rem 2rem;
+    overflow-y: hidden; /* Ocultar el scroll principal */
+}
+
+/* --- Ventana de Mensajes --- */
+.chat-window {
+    flex-grow: 1;
+    padding-right: 1rem; /* Espacio para la barra de scroll */
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}
+
+.chat-window::-webkit-scrollbar {
+    width: 6px;
+}
+.chat-window::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+.chat-window::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+}
+
+/* --- Estilos de Mensajes --- */
+.message {
+    display: flex;
+    margin-bottom: 1.5rem;
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message-bubble {
+    padding: 0.75rem 1.25rem;
+    border-radius: 18px;
+    max-width: 80%;
+}
+
+.message.user {
+    justify-content: flex-end;
+}
+
+.message.user .message-bubble {
+    background: var(--user-msg-bg);
+    color: var(--user-msg-text);
+    border-bottom-right-radius: 4px;
+}
+
+.message.bot {
+    justify-content: flex-start;
+}
+
+.message.bot .message-bubble {
+    background: var(--bot-msg-bg);
+    color: var(--bot-msg-text);
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* --- Tarjeta para renderizar respuestas del backend --- */
+.response-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--border-radius);
+    margin-top: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.response-header {
+    display: none; /* Ocultar el header que muestra el nombre de la herramienta */
+}
+
+.response-content {
+    padding: 1rem;
+}
+
+/* --- Tarjeta de abonado --- */
+.subscriber-card {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.subscriber-name {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.subscriber-field {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.subscriber-field:last-child {
+    border-bottom: none;
+}
+
+.field-icon {
+    font-size: 1.1em;
+    width: 1.5rem;
+}
+
+.field-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+    min-width: 80px;
+}
+
+.field-value {
+    color: var(--text-primary);
+    font-weight: 600;
+    flex: 1;
+}
+
+/* --- Tarjeta de facturas --- */
+.facturas-card {
+    background: linear-gradient(135deg, #f0f9f4, #ecfdf5);
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.facturas-card h3 {
+    color: #059669;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.factura-item {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid #d1fae5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.2s ease;
+}
+
+.factura-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.factura-item:last-child {
+    margin-bottom: 0;
+}
+
+.factura-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.factura-id, .factura-fecha {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.factura-id span:last-child {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.factura-details {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.factura-estado {
+    padding: 0.25rem 0.75rem;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.estado-pagado {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.estado-pendiente {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.factura-importe {
+    color: var(--primary-color);
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.json-entry {
+    margin-bottom: 0.5rem;
+}
+
+.json-key {
+    color: var(--card-key-color);
+    font-weight: bold;
+}
+
+.json-value {
+    color: #333;
+}
+
+.json-nested-object {
+    padding-left: 1.5rem;
+    border-left: 2px solid #eee;
+    margin-top: 0.5rem;
+}
+
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+}
+.typing-indicator span {
+    height: 8px;
+    width: 8px;
+    background-color: #aaa;
+    border-radius: 50%;
+    display: inline-block;
+    margin: 0 2px;
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+.typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+.typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1.0); }
+}
+
+
+/* --- Formulario de Entrada --- */
+.chat-footer {
+    padding: 1.5rem 0 0 0;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--surface-color);
+    flex-shrink: 0;
+}
+
+.message-form {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.chat-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#message-input {
+    flex-grow: 1;
+    border: 2px solid var(--border-color);
+    background-color: #f8fafc;
+    border-radius: 25px;
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+#message-input:focus {
+    border-color: var(--primary-color);
+    background-color: white;
+    box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.1);
+}
+
+.clear-button {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.clear-button:hover {
+    background-color: #5a6268;
+}
+
+.clear-button:active {
+    transform: scale(0.95);
+}
+
+.send-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    font-size: 1rem;
+    font-weight: 600;
+    gap: 0.5rem;
+}
+
+.send-button:hover {
+    background-color: var(--primary-hover);
+}
+
+.send-button:active {
+    transform: scale(0.95);
+}
+
+.send-button span {
+    display: block;
+}
+
+.send-button svg {
+    display: none;
+}
+
+/* --- Diseño Responsivo --- */
+@media (max-width: 768px) {
+    .sidebar {
+        display: none; /* Ocultar sidebar en pantallas pequeñas */
+    }
+
+    .main-content {
+        padding: 1rem;
+    }
+
+    .send-button span {
+        display: none;
+    }
+
+    .send-button svg {
+        display: block;
+    }
+
+    .send-button {
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border-radius: 50%;
+    }
+}
+
+.factura-id-label {
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 0.2rem;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.factura-id-label span:first-child {
+    font-size: 0.95em;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* --- Tarjeta de Incidencias --- */
+.incidencias-card {
+    background: linear-gradient(135deg, #fff7f5, #fff1f2);
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.incidencias-card h3 {
+    color: #ef4444;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.incidencia-item {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid #fee2e2;
+    display: grid;
+    grid-template-areas:
+        "location status"
+        "description description";
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.incidencia-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.incidencia-item:last-child {
+    margin-bottom: 0;
+}
+
+.incidencia-location {
+    grid-area: location;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.incidencia-description {
+    grid-area: description;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #f3f4f6;
+}
+
+.incidencia-status {
+    grid-area: status;
+    justify-self: end;
+}
+
+.incidencia-status .estado {
+    padding: 0.25rem 0.75rem;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.estado-resuelto {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.estado-pendiente {
+    background-color: #fef9c3;
+    color: #854d0e;
+}
+
+.estado-en-proceso {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+/* --- Tarjeta del Clima --- */
+.weather-card {
+    background: linear-gradient(135deg, #e0f2fe, #f0f9ff);
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    text-align: center;
+}
+
+.weather-card h3 {
+    color: #0284c7;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.weather-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.weather-temp {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.weather-desc {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* --- Tarjeta de Deuda Total --- */
+.deuda-card {
+    background: linear-gradient(135deg, #fffbe6, #fff9db);
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 1rem;
+}
+
+.deuda-card h3 {
+    color: #eab308;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.deuda-field {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.deuda-field:last-child {
+    border-bottom: none;
+}
+
+.deuda-value {
+    color: #eab308;
+    font-weight: 700;
+    font-size: 1.3rem;
+}

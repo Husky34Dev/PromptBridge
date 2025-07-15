@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente Inteligente</title>
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💬</text></svg>">
+</head>
+<body>
+    <div class="page-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>Asistente IA</h1>
+                <p>Consultas y Análisis</p>
+            </div>
+            <div class="sidebar-content">
+                <div class="role-selector">
+                    <label for="user-role">Rol de Usuario:</label>
+                    <select id="user-role">
+                        <option value="admin">Administrador</option>
+                        <option value="cliente">Cliente</option>
+                        <option value="soporte">Soporte</option>
+                    </select>
+                </div>
+                <div class="info-panel">
+                    <h3>Información</h3>
+                    <p>Introduce tu consulta en el cuadro de texto principal para realizar consultas. Los resultados se mostrarán en el panel de la derecha.</p>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <p>Agente Inteligente v1.0</p>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div id="chat-window" class="chat-window">
+                <!-- Los mensajes se añadirán aquí -->
+            </div>
+    
+            <footer class="chat-footer">
+                <form id="message-form" class="message-form">
+                    <input type="text" id="message-input" placeholder="Escribe tu consulta aquí..." autocomplete="off" required>
+                    <div class="chat-actions">
+                        <button type="button" id="clear-chat" class="clear-button" title="Limpiar chat">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 6h18"/>
+                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                            </svg>
+                        </button>
+                        <button type="submit" class="send-button">
+                            <span>Enviar</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M5 12h14"/>
+                                <path d="m12 5 7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </footer>
+        </main>
+    </div>
+
+    <script type="module" src="static/app.js"></script>
+</body>
+</html>

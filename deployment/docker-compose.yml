@@ -1,0 +1,39 @@
+services:
+  agente-web:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GROQ_MODEL=${GROQ_MODEL:-meta-llama/llama-4-scout-17b-16e-instruct}
+      - ROUTING_MODEL=${ROUTING_MODEL:-llama-3.3-70b-versatile}
+      - SERVER_URL=${SERVER_URL:-http://backend:8000}
+      - BACKEND_HOST=backend
+    volumes:
+      - ../logs:/app/logs
+      - ../client_config:/app/client_config
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - agente-network
+
+  backend:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../logs:/app/logs
+      - ../core/backend:/app/core/backend
+    restart: unless-stopped
+    networks:
+      - agente-network
+    command: ["python", "-m", "uvicorn", "core.backend.server:app", "--host", "0.0.0.0", "--port", "8000"]
+
+networks:
+  agente-network:
+    driver: bridge
