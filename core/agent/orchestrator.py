@@ -1,5 +1,6 @@
 import logging
 import json
+import os
 from groq import Groq
 from core.config.config import GROQ_API_KEY, GROQ_MODEL, ROUTING_MODEL, SERVER_URL
 from core.agent.agents.agent_base import AgentBase
@@ -28,6 +29,42 @@ class Orchestrator:
         self.context_manager = context_manager
         self.context = {}
         self.client = Groq(api_key=GROQ_API_KEY)
+        # Gestión de modos
+        self.modes_config = self.load_modes_config()
+        self.active_mode = self.modes_config.get('default_mode', 'rigido')
+
+    def load_modes_config(self):
+        """
+        Carga la configuración de modos desde client_config/modes.json
+        """
+        modes_path = os.path.join(os.path.dirname(__file__), '../../client_config/modes.json')
+        try:
+            with open(modes_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            logging.warning(f"No se pudo cargar modes.json, usando modo rígido por defecto: {e}")
+            return {"enabled_modes": ["rigido"], "default_mode": "rigido", "allowed_roles_to_change_mode": ["admin"]}
+
+    def set_active_mode(self, requested_mode, user_role):
+        """
+        Permite cambiar el modo activo si el rol lo permite y el modo está habilitado.
+        """
+        enabled_modes = self.modes_config.get('enabled_modes', ["rigido"])
+        allowed_roles = self.modes_config.get('allowed_roles_to_change_mode', ["admin"])
+        if len(enabled_modes) == 1:
+            self.active_mode = enabled_modes[0]
+            return self.active_mode
+        if user_role in allowed_roles and requested_mode in enabled_modes:
+            self.active_mode = requested_mode
+        else:
+            self.active_mode = self.modes_config.get('default_mode', enabled_modes[0])
+        return self.active_mode
+
+    def get_active_mode(self):
+        """
+        Devuelve el modo activo actual.
+        """
+        return self.active_mode
 
     def get_allowed_agents(self, user_role):
         """
@@ -67,18 +104,18 @@ class Orchestrator:
                     return agent.handle(user_input, entidades, self.context, self.tools_schema)
         return agents_to_use[0].handle(user_input, entidades, self.context, self.tools_schema)
 
-    def responder(self, user_input: str, user_role: str = "cliente") -> dict:
+    def responder(self, user_input: str, user_role: str = "cliente", requested_mode: str = "") -> dict:
         """
         Procesa la entrada del usuario, selecciona el agente adecuado y retorna la respuesta.
+        Ahora expone el modo activo y permite cambiarlo si el rol lo permite.
         Si ningún agente es adecuado, responde usando el modelo general.
-        
-        Args:
-            user_input (str): Entrada del usuario.
-            user_role (str, opcional): Rol del usuario. Por defecto es 'cliente'.
-        
-        Returns:
-            dict: Respuesta generada por el agente o el modelo general.
         """
+        # Selección de modo activo
+        if requested_mode:
+            self.set_active_mode(requested_mode, user_role)
+        else:
+            self.set_active_mode(self.active_mode, user_role)
+        modo_actual = self.get_active_mode()
         allowed_agents = self.get_allowed_agents(user_role)
         router_prompt = f"Usuario: {user_input}\nRespuesta:"
         resp = self.client.chat.completions.create(
@@ -103,15 +140,19 @@ class Orchestrator:
                         entidades[entidad] = referencia[entidad]
             logging.debug(f"Entidades extraídas: {entidades}")
             try:
-                # Buscar el agente real usando el nombre normalizado
                 idx = allowed_names_normalized.index(agent_name_normalized)
                 agente_obj = allowed_agents[idx]
                 respuesta = self.route(user_input, entidades, agent_name=agente_obj.name, allowed_agents=allowed_agents)
                 logging.debug(f"[responder] Respuesta del agente '{agente_obj.name}': {respuesta}")
             except Exception as e:
                 logging.exception("Error en la coordinación de agentes")
-                return {"type": "error", "error": str(e)}
-            return respuesta
+                return {"type": "error", "error": str(e), "mode": modo_actual}
+            # Envolver la respuesta del agente para asegurar que siempre incluya el modo
+            if isinstance(respuesta, dict):
+                respuesta["mode"] = modo_actual
+                return respuesta
+            else:
+                return {"type": "agent", "response": respuesta, "mode": modo_actual}
         else:
             logging.debug(f"[responder] No se encontró agente válido para '{agent_name}', usando asistente general.")
             resp = self.client.chat.completions.create(
@@ -121,4 +162,5 @@ class Orchestrator:
                     {"role": "user", "content": user_input}
                 ]
             )
-            return {"type": "chat", "response": resp.choices[0].message.content}
+            # Fallback: también se expone el modo activo
+            return {"type": "chat", "response": resp.choices[0].message.content, "mode": modo_actual}

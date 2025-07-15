@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const userRoleSelect = document.getElementById('user-role');
     const clearChatButton = document.getElementById('clear-chat');
 
+    // --- Estado de la aplicación ---
+    let currentMode = "rígido"; // Modo inicial
+
     // --- Manejador del botón limpiar chat ---
     clearChatButton.addEventListener('click', () => {
         if (confirm('¿Estás seguro de que quieres limpiar todo el chat?')) {
@@ -21,11 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         const messageText = messageInput.value.trim();
         if (messageText) {
-            // Muestra el mensaje del usuario y limpia el input
             displayMessage(messageText, 'user');
             messageInput.value = '';
-            
-            // Muestra el indicador de "escribiendo..." y obtiene la respuesta del bot
             showBotTyping();
             getBotResponse(messageText);
         }
@@ -58,7 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
      * Muestra el indicador de "escribiendo...".
      */
     function showBotTyping() {
-        // Elimina cualquier indicador previo
         const existingTyping = document.getElementById('typing-indicator');
         if (existingTyping) existingTyping.remove();
         
@@ -99,7 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({
                     message: userMessage,
-                    user_role: selectedRole
+                    user_role: selectedRole,
+                    mode: currentMode // Enviamos el modo actual al backend
                 })
             });
 
@@ -144,29 +144,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (result.error) {
                     displayMessage(`❌ Error en ${result.tool}: ${result.error}`, 'bot');
                 } else if (result.response) {
-                    const formattedResponse = formatToolResponse(result);
-                    const jsonCard = createResponseCard(formattedResponse);
-                    displayMessage(jsonCard, 'bot');
+                    const card = createResponseCard(formatToolResponse(result));
+                    displayMessage(card, 'bot');
                 }
             });
         } else {
             displayMessage('✅ Operación completada', 'bot');
         }
-    }
-
-    /**
-     * Formatea la respuesta de una herramienta.
-     * @param {object} result - El resultado de la herramienta.
-     * @returns {object} Los datos formateados.
-     */
-    function formatToolResponse(result) {
-        const toolName = result.tool;
-        const response = result.response;
-        
-        return {
-            tool: toolName,
-            data: response
-        };
     }
 
     /**
@@ -181,18 +165,54 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function clearChat() {
         chatWindow.innerHTML = '';
-        // Mostrar mensaje de confirmación
         setTimeout(() => {
             displayMessage('🧹 Chat limpiado correctamente', 'bot');
         }, 100);
     }
 
-    // --- Event listeners adicionales ---
+    // --- Event listener para cambio de rol ---
     userRoleSelect.addEventListener('change', () => {
         const selectedRole = userRoleSelect.value;
         const roleText = selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1);
         displayMessage(`🔄 Rol cambiado a: ${roleText}`, 'bot');
     });
+
+    // --- LÓGICA DEL INTERRUPTOR DE MODO ---
+    const modeToggles = document.querySelectorAll('.mode-toggle');
+
+    function updateModeToggleUI() {
+        modeToggles.forEach(el => {
+            // Comprueba si el texto del botón coincide con el modo actual
+            if (el.textContent.trim().toLowerCase() === currentMode) {
+                el.classList.add('active-mode');
+            } else {
+                el.classList.remove('active-mode');
+            }
+        });
+    }
+
+    modeToggles.forEach(el => {
+        el.addEventListener('click', () => {
+            const clickedMode = el.textContent.trim().toLowerCase();
+            if (currentMode !== clickedMode) {
+                currentMode = clickedMode;
+                updateModeToggleUI();
+                 // Opcional: notificar al usuario del cambio
+                displayMessage(`Modo cambiado a: ${currentMode}`, 'bot');
+            }
+        });
+    });
+
+    // --- CÓDIGO NUEVO Y ESENCIAL ---
+    // Añade los atributos de datos ('data-mode') para que el CSS pueda aplicar los colores.
+    modeToggles.forEach(el => {
+        const modeName = el.textContent.trim().toLowerCase();
+        el.dataset.mode = modeName; // Esto crea el atributo -> data-mode="rígido"
+    });
+
+    // --- INICIALIZACIÓN ---
+    // Muestra el estado inicial del interruptor de modo
+    updateModeToggleUI();
 
     // Muestra un mensaje inicial del bot
     setTimeout(() => {

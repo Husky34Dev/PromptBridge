@@ -52,7 +52,10 @@ export function createResponseCard(responseData) {
  */
 export function renderResponseData(data) {
     const container = document.createElement('div');
-    
+    if (!data || typeof data !== 'object') {
+        container.textContent = 'Sin datos para mostrar.';
+        return container;
+    }
     // Casos especiales para datos de abonado
     if (data.nombre || data.dni || data.direccion) {
         return createSubscriberCard(data);

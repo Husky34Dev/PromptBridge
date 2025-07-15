@@ -1,0 +1,5 @@
+{
+  "enabled_modes": ["rigido", "flexible"],
+  "default_mode": "rigido",
+  "allowed_roles_to_change_mode": ["admin", "soporte"]
+}

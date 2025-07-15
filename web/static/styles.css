@@ -24,6 +24,12 @@
     --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     --border-radius: 12px;
     --shadow: 0 6px 16px rgba(0, 0, 0, 0.07);
+
+    /* NUEVAS VARIABLES PARA LOS MODOS */
+    --mode-rigid-color: #c81e1e;
+    --mode-rigid-bg: #fde8e8;
+    --mode-flexible-color: #b45309;
+    --mode-flexible-bg: #fef3c7;
 }
 
 * {
@@ -473,6 +479,70 @@ body {
 }
 
 .send-button svg {
+    display: none;
+}
+
+/* --- ESTILOS DEL INTERRUPTOR DE MODO (ACTUALIZADO) --- */
+.mode-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 18px;
+    font-size: 1em;
+}
+
+.mode-panel label {
+    color: var(--sidebar-header-text);
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding-left: 5px;
+}
+
+.mode-switch {
+    display: flex;
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 4px;
+    border: 1px solid #334155;
+}
+
+.mode-toggle {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    color: var(--sidebar-text);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-align: center;
+    text-transform: capitalize;
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.1s ease;
+    outline: none;
+}
+
+.mode-toggle:hover:not(.active-mode) {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.mode-toggle:active {
+    transform: scale(0.97);
+}
+
+.mode-toggle.active-mode[data-mode="rígido"] {
+    background-color: var(--mode-rigid-bg);
+    color: var(--mode-rigid-color);
+    box-shadow: 0 2px 8px rgba(200, 30, 30, 0.2);
+}
+
+.mode-toggle.active-mode[data-mode="flexible"] {
+    background-color: var(--mode-flexible-bg);
+    color: var(--mode-flexible-color);
+    box-shadow: 0 2px 8px rgba(180, 83, 9, 0.2);
+}
+
+.mode-separator {
     display: none;
 }
 
