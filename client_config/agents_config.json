@@ -62,7 +62,8 @@
     "tools": [
       "datos_abonado",
       "direccion_abonado",
-      "existe_abonado"
+      "existe_abonado",
+      "todas_las_facturas"
     ],
     "allowed_roles": [
       "admin",

@@ -44,15 +44,21 @@ class ContextManager:
     def extract_and_update(self, text):
         """
         Extrae entidades usando los patrones y actualiza el contexto.
+        La extracción de DNI es case-insensitive y se normaliza la letra a mayúscula.
         Args:
             text (str): Texto de entrada del usuario.
         Returns:
             dict: Contexto actualizado con las entidades extraídas.
         """
         for entity, pattern in self.patterns.items():
-            match = re.search(pattern, text)
+            flags = re.IGNORECASE if entity == "dni" else 0
+            match = re.search(pattern, text, flags)
             if match:
-                self.context[entity] = match.group()
+                value = match.group()
+                # Normalizar DNI: letra final en mayúscula
+                if entity == "dni":
+                    value = value[:-1] + value[-1].upper()
+                self.context[entity] = value
         return self.context.copy()
 
     def resolve_reference(self, text):

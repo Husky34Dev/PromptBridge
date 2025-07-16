@@ -28,6 +28,7 @@ class Orchestrator:
         self.tools_schema = tools_schema
         self.context_manager = context_manager
         self.context = {}
+        self.public_context = []  # Historial de mensajes pregunta/respuesta
         self.client = Groq(api_key=GROQ_API_KEY)
         # Gestión de modos
         self.modes_config = self.load_modes_config()
@@ -117,6 +118,9 @@ class Orchestrator:
             self.set_active_mode(self.active_mode, user_role)
         modo_actual = self.get_active_mode()
         allowed_agents = self.get_allowed_agents(user_role)
+        # Añadir la pregunta al contexto público
+        self.public_context.append({"role": "user", "content": user_input})
+        logging.debug(f"[contexto público] Historial actual: {json.dumps(self.public_context, ensure_ascii=False)}")
         router_prompt = f"Usuario: {user_input}\nRespuesta:"
         resp = self.client.chat.completions.create(
             model=ROUTING_MODEL, # type: ignore
@@ -131,14 +135,15 @@ class Orchestrator:
         agent_name_normalized = agent_name.strip().lower()
         allowed_names_normalized = [a.name.strip().lower() for a in allowed_agents]
         logging.debug(f"[responder] Nombres de agentes permitidos: {allowed_names_normalized}")
+        # Gestión de contexto y entidades con ContextManager
+        entidades = self.context_manager.extract_and_update(user_input)
+        # Recuperación referencial y normalización (todo en ContextManager)
+        for entidad in self.context_manager.patterns.keys():
+            if entidad not in entidades and self.context_manager.context.get(entidad):
+                entidades[entidad] = self.context_manager.context[entidad]
+        # Si quieres normalización avanzada, puedes añadir un método en ContextManager para esto
+        logging.debug(f"Entidades extraídas: {entidades}")
         if agent_name_normalized in allowed_names_normalized:
-            entidades = self.context_manager.extract_and_update(user_input)
-            for entidad in self.context_manager.patterns.keys():
-                if entidad not in entidades:
-                    referencia = self.context_manager.resolve_reference(user_input)
-                    if entidad in referencia:
-                        entidades[entidad] = referencia[entidad]
-            logging.debug(f"Entidades extraídas: {entidades}")
             try:
                 idx = allowed_names_normalized.index(agent_name_normalized)
                 agente_obj = allowed_agents[idx]
@@ -147,11 +152,15 @@ class Orchestrator:
             except Exception as e:
                 logging.exception("Error en la coordinación de agentes")
                 return {"type": "error", "error": str(e), "mode": modo_actual}
-            # Envolver la respuesta del agente para asegurar que siempre incluya el modo
+            # Añadir la respuesta al contexto público
             if isinstance(respuesta, dict):
+                self.public_context.append({"role": "assistant", "content": respuesta.get("response", str(respuesta))})
+                logging.debug(f"[contexto público] Historial actual: {json.dumps(self.public_context, ensure_ascii=False)}")
                 respuesta["mode"] = modo_actual
                 return respuesta
             else:
+                self.public_context.append({"role": "assistant", "content": str(respuesta)})
+                logging.debug(f"[contexto público] Historial actual: {json.dumps(self.public_context, ensure_ascii=False)}")
                 return {"type": "agent", "response": respuesta, "mode": modo_actual}
         else:
             logging.debug(f"[responder] No se encontró agente válido para '{agent_name}', usando asistente general.")
@@ -162,5 +171,7 @@ class Orchestrator:
                     {"role": "user", "content": user_input}
                 ]
             )
+            self.public_context.append({"role": "assistant", "content": resp.choices[0].message.content})
+            logging.debug(f"[contexto público] Historial actual: {json.dumps(self.public_context, ensure_ascii=False)}")
             # Fallback: también se expone el modo activo
             return {"type": "chat", "response": resp.choices[0].message.content, "mode": modo_actual}
