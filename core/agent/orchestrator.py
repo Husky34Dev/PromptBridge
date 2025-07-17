@@ -1,12 +1,46 @@
 import logging
 import json
 import os
+
 from groq import Groq
 from core.config.config import GROQ_API_KEY, GROQ_MODEL, ROUTING_MODEL, SERVER_URL
 from core.agent.agents.agent_base import AgentBase
 from core.agent.tools.context_manager import ContextManager
+from core.agent.middleware.control_middleware import ControlMiddleware
 
 class Orchestrator:
+    def _add_to_public_context(self, role, content):
+        """
+        Añade un mensaje al contexto público y mantiene el historial acotado.
+        """
+        self.public_context.append({"role": role, "content": content})
+        self.public_context = self.public_context[-5:]
+        self._log_public_context()
+
+    def _update_private_context(self, entidades):
+        """
+        Actualiza el contexto privado con las entidades extraídas y referenciadas.
+        """
+        for entidad in self.context_manager.patterns.keys():
+            if entidad not in entidades and self.context_manager.context.get(entidad):
+                entidades[entidad] = self.context_manager.context[entidad]
+        return entidades
+
+    def _log_public_context(self):
+        """
+        Loguea el historial público de preguntas/respuestas de forma estructurada.
+        """
+        logging.debug(f"[contexto público] Historial actual: {json.dumps(self.public_context, ensure_ascii=False)}")
+
+    def _log_router_selection(self, agent_name, allowed_names_normalized):
+        logging.debug(f"[router_agent] Seleccionado: {agent_name}")
+        logging.debug(f"[responder] Nombres de agentes permitidos: {allowed_names_normalized}")
+
+    def _log_extracted_entities(self, entidades):
+        logging.debug(f"Entidades extraídas: {entidades}")
+
+    def _log_agent_response(self, agent_name, respuesta):
+        logging.debug(f"[responder] Respuesta del agente '{agent_name}': {respuesta}")
     """
     Clase principal para la coordinación de agentes y el enrutamiento de peticiones.
     Se encarga de seleccionar el agente adecuado según el rol del usuario y la entrada,
@@ -33,6 +67,8 @@ class Orchestrator:
         # Gestión de modos
         self.modes_config = self.load_modes_config()
         self.active_mode = self.modes_config.get('default_mode', 'rigido')
+        # Middleware de control
+        self.middleware = ControlMiddleware()
 
     def load_modes_config(self):
         """
@@ -119,8 +155,7 @@ class Orchestrator:
         modo_actual = self.get_active_mode()
         allowed_agents = self.get_allowed_agents(user_role)
         # Añadir la pregunta al contexto público
-        self.public_context.append({"role": "user", "content": user_input})
-        logging.debug(f"[contexto público] Historial actual: {json.dumps(self.public_context, ensure_ascii=False)}")
+        self._add_to_public_context("user", user_input)
         router_prompt = f"Usuario: {user_input}\nRespuesta:"
         resp = self.client.chat.completions.create(
             model=ROUTING_MODEL, # type: ignore
@@ -131,37 +166,45 @@ class Orchestrator:
             max_completion_tokens=10
         )
         agent_name = resp.choices[0].message.content.strip() # type: ignore
-        logging.debug(f"[router_agent] Seleccionado: {agent_name}")
+        self._log_router_selection(agent_name, [a.name.strip().lower() for a in allowed_agents])
         agent_name_normalized = agent_name.strip().lower()
         allowed_names_normalized = [a.name.strip().lower() for a in allowed_agents]
-        logging.debug(f"[responder] Nombres de agentes permitidos: {allowed_names_normalized}")
         # Gestión de contexto y entidades con ContextManager
         entidades = self.context_manager.extract_and_update(user_input)
         # Recuperación referencial y normalización (todo en ContextManager)
-        for entidad in self.context_manager.patterns.keys():
-            if entidad not in entidades and self.context_manager.context.get(entidad):
-                entidades[entidad] = self.context_manager.context[entidad]
+        entidades = self._update_private_context(entidades)
         # Si quieres normalización avanzada, puedes añadir un método en ContextManager para esto
-        logging.debug(f"Entidades extraídas: {entidades}")
+        self._log_extracted_entities(entidades)
         if agent_name_normalized in allowed_names_normalized:
             try:
                 idx = allowed_names_normalized.index(agent_name_normalized)
                 agente_obj = allowed_agents[idx]
                 respuesta = self.route(user_input, entidades, agent_name=agente_obj.name, allowed_agents=allowed_agents)
-                logging.debug(f"[responder] Respuesta del agente '{agente_obj.name}': {respuesta}")
+                self._log_agent_response(agente_obj.name, respuesta)
             except Exception as e:
                 logging.exception("Error en la coordinación de agentes")
                 return {"type": "error", "error": str(e), "mode": modo_actual}
             # Añadir la respuesta al contexto público
             if isinstance(respuesta, dict):
-                self.public_context.append({"role": "assistant", "content": respuesta.get("response", str(respuesta))})
-                logging.debug(f"[contexto público] Historial actual: {json.dumps(self.public_context, ensure_ascii=False)}")
+                self._add_to_public_context("assistant", respuesta.get("response", str(respuesta)))
                 respuesta["mode"] = modo_actual
-                return respuesta
+                # Delegar lógica avanzada al middleware en modo flexible
+                return self.middleware.process(
+                    consulta=user_input,
+                    usuario=user_role,
+                    modo=modo_actual,
+                    contexto_publico=self.public_context,
+                    respuesta_agente=respuesta
+                ) # type: ignore
             else:
-                self.public_context.append({"role": "assistant", "content": str(respuesta)})
-                logging.debug(f"[contexto público] Historial actual: {json.dumps(self.public_context, ensure_ascii=False)}")
-                return {"type": "agent", "response": respuesta, "mode": modo_actual}
+                self._add_to_public_context("assistant", str(respuesta))
+                return self.middleware.process(
+                    consulta=user_input,
+                    usuario=user_role,
+                    modo=modo_actual,
+                    contexto_publico=self.public_context,
+                    respuesta_agente={"type": "agent", "response": respuesta, "mode": modo_actual}
+                ) # type: ignore
         else:
             logging.debug(f"[responder] No se encontró agente válido para '{agent_name}', usando asistente general.")
             resp = self.client.chat.completions.create(
@@ -171,7 +214,12 @@ class Orchestrator:
                     {"role": "user", "content": user_input}
                 ]
             )
-            self.public_context.append({"role": "assistant", "content": resp.choices[0].message.content})
-            logging.debug(f"[contexto público] Historial actual: {json.dumps(self.public_context, ensure_ascii=False)}")
+            self._add_to_public_context("assistant", resp.choices[0].message.content)
             # Fallback: también se expone el modo activo
-            return {"type": "chat", "response": resp.choices[0].message.content, "mode": modo_actual}
+            return self.middleware.process(
+                consulta=user_input,
+                usuario=user_role,
+                modo=modo_actual,
+                contexto_publico=self.public_context,
+                respuesta_agente={"type": "chat", "response": resp.choices[0].message.content, "mode": modo_actual}
+            ) # type: ignore

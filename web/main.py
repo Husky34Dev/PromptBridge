@@ -21,6 +21,7 @@ app.mount("/static", StaticFiles(directory="web/static"), name="static")
 class ChatRequest(BaseModel):
     message: str
     user_role: str = "cliente"
+    mode: str = "rigido"
 
 class ChatResponse(BaseModel):
     type: str
@@ -56,10 +57,8 @@ async def chat(request: ChatRequest):
     """Endpoint principal del chat - usa tu lógica actual"""
     if not request.message:
         raise HTTPException(status_code=400, detail="Mensaje requerido")
-    
     try:
-        # Tu función actual sin modificaciones
-        response = responder(request.message, request.user_role)
+        response = responder(request.message, request.user_role, request.mode)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error procesando consulta: {str(e)}")

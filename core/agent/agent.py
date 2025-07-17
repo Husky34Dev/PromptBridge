@@ -48,16 +48,17 @@ user_agents = [a for a in agents if a.name != "router_agent"]
 # Crear el orquestador
 orchestrator = Orchestrator(user_agents, router_agent, tools, context_manager)
 
-def responder(user_input: str, user_role: str = "cliente") -> dict:
+def responder(user_input: str, user_role: str = "cliente", requested_mode: str = "") -> dict:
     """
     Función principal de entrada para procesar la petición del usuario.
-    Llama al orquestador para obtener la respuesta adecuada según el rol y la entrada.
+    Llama al orquestador para obtener la respuesta adecuada según el rol, la entrada y el modo.
     
     Args:
         user_input (str): Entrada del usuario.
         user_role (str, opcional): Rol del usuario. Por defecto es 'cliente'.
+        requested_mode (str, opcional): Modo solicitado ('rigido' o 'flexible').
     
     Returns:
         dict: Respuesta generada por el orquestador.
     """
-    return orchestrator.responder(user_input, user_role=user_role)
+    return orchestrator.responder(user_input, user_role=user_role, requested_mode=requested_mode)
