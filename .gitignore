@@ -76,7 +76,9 @@ venv.bak/
 logs/
 
 #Dev
+dcf.md
 df3.md
+df4.md
 
 # Databases
 *.sqlite3
