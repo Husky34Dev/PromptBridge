@@ -1,8 +1,6 @@
 import logging
 import os
 import json
-from core.config.config import GROQ_API_KEY, GROQ_MODEL, ROUTING_MODEL, SERVER_URL
-from core.agent.tools.entidades import extract_entities
 from core.agent.tools.context_manager import ContextManager
 from core.agent.agents.agent_base import AgentBase
 from core.agent.orchestrator import Orchestrator

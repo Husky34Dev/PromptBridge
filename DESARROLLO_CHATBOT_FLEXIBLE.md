@@ -122,10 +122,10 @@ Usuario → Router Agent → Agente Especializado → Tool Call → Backend → 
 - [x] Planificar migración gradual
 
 ### Fase 3: Implementación
-- [ ] Crear sistema de modos
-- [ ] Implementar contexto conversacional
-- [ ] Desarrollar middleware
-- [ ] Actualizar frontend para nuevos tipos
+- [x] Crear sistema de modos
+- [x] Implementar contexto conversacional
+- [x] Desarrollar middleware
+- [x] Actualizar frontend para nuevos tipos
 
 ### Fase 4: Testing y Validación
 - [ ] Pruebas de funcionamiento

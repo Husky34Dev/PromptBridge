@@ -75,6 +75,9 @@ venv.bak/
 *.log
 logs/
 
+#Dev
+df3.md
+
 # Databases
 *.sqlite3
 # Pero incluir la demo database

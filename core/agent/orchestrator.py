@@ -15,7 +15,6 @@ class Orchestrator:
         """
         self.public_context.append({"role": role, "content": content})
         self.public_context = self.public_context[-5:]
-        self._log_public_context()
 
     def _update_private_context(self, entidades):
         """
@@ -26,21 +25,20 @@ class Orchestrator:
                 entidades[entidad] = self.context_manager.context[entidad]
         return entidades
 
-    def _log_public_context(self):
-        """
-        Loguea el historial público de preguntas/respuestas de forma estructurada.
-        """
-        logging.debug(f"[contexto público] Historial actual: {json.dumps(self.public_context, ensure_ascii=False)}")
-
     def _log_router_selection(self, agent_name, allowed_names_normalized):
-        logging.debug(f"[router_agent] Seleccionado: {agent_name}")
-        logging.debug(f"[responder] Nombres de agentes permitidos: {allowed_names_normalized}")
+        logging.info(f"[router_agent] Seleccionado: {agent_name}")
 
     def _log_extracted_entities(self, entidades):
-        logging.debug(f"Entidades extraídas: {entidades}")
+        logging.info(f"Entidades extraídas: {entidades}")
 
     def _log_agent_response(self, agent_name, respuesta):
-        logging.debug(f"[responder] Respuesta del agente '{agent_name}': {respuesta}")
+        logging.info(f"[responder] Respuesta del agente '{agent_name}': {respuesta}")
+
+    def _log_user_query(self, user_input):
+        logging.info(f"[consulta] Usuario: {user_input}")
+
+    def _log_prompt_llm(self, prompt):
+        logging.info(f"[prompt_llm] Prompt enviado al modelo: {prompt}")
     """
     Clase principal para la coordinación de agentes y el enrutamiento de peticiones.
     Se encarga de seleccionar el agente adecuado según el rol del usuario y la entrada,
@@ -144,19 +142,38 @@ class Orchestrator:
     def responder(self, user_input: str, user_role: str = "cliente", requested_mode: str = "") -> dict:
         """
         Procesa la entrada del usuario, selecciona el agente adecuado y retorna la respuesta.
-        Ahora expone el modo activo y permite cambiarlo si el rol lo permite.
-        Si ningún agente es adecuado, responde usando el modelo general.
+        Refactorizado para mayor claridad y mantenibilidad.
         """
-        # Selección de modo activo
+        modo_actual = self._select_active_mode(requested_mode, user_role)
+        allowed_agents = self.get_allowed_agents(user_role)
+        self._log_user_query(user_input)
+        self._add_to_public_context("user", user_input)
+        agent_name = self._get_router_agent_name(user_input)
+        self._log_router_selection(agent_name, [a.name.strip().lower() for a in allowed_agents])
+        entidades = self._extract_and_update_context(user_input)
+        self._log_extracted_entities(entidades)
+        agente_obj = self._find_agent(agent_name, allowed_agents)
+        if agente_obj:
+            try:
+                respuesta = self.route(user_input, entidades, agent_name=agente_obj.name, allowed_agents=allowed_agents)
+                self._log_agent_response(agente_obj.name, respuesta)
+            except Exception as e:
+                logging.error(f"Error en la coordinación de agentes: {e}")
+                return {"type": "error", "error": str(e), "mode": modo_actual}
+            return self._process_agent_response(respuesta, modo_actual, user_input, user_role)
+        else:
+            return self._process_fallback_response(user_input, user_role, modo_actual)
+
+    def _select_active_mode(self, requested_mode, user_role):
         if requested_mode:
             self.set_active_mode(requested_mode, user_role)
         else:
             self.set_active_mode(self.active_mode, user_role)
-        modo_actual = self.get_active_mode()
-        allowed_agents = self.get_allowed_agents(user_role)
-        # Añadir la pregunta al contexto público
-        self._add_to_public_context("user", user_input)
+        return self.get_active_mode()
+
+    def _get_router_agent_name(self, user_input):
         router_prompt = f"Usuario: {user_input}\nRespuesta:"
+        self._log_prompt_llm({"role": "system", "content": self.router_agent.system_prompt, "user": router_prompt})
         resp = self.client.chat.completions.create(
             model=ROUTING_MODEL, # type: ignore
             messages=[
@@ -165,61 +182,56 @@ class Orchestrator:
             ],
             max_completion_tokens=10
         )
-        agent_name = resp.choices[0].message.content.strip() # type: ignore
-        self._log_router_selection(agent_name, [a.name.strip().lower() for a in allowed_agents])
-        agent_name_normalized = agent_name.strip().lower()
-        allowed_names_normalized = [a.name.strip().lower() for a in allowed_agents]
-        # Gestión de contexto y entidades con ContextManager
+        return resp.choices[0].message.content.strip() # type: ignore
+
+    def _extract_and_update_context(self, user_input):
         entidades = self.context_manager.extract_and_update(user_input)
-        # Recuperación referencial y normalización (todo en ContextManager)
         entidades = self._update_private_context(entidades)
-        # Si quieres normalización avanzada, puedes añadir un método en ContextManager para esto
-        self._log_extracted_entities(entidades)
-        if agent_name_normalized in allowed_names_normalized:
-            try:
-                idx = allowed_names_normalized.index(agent_name_normalized)
-                agente_obj = allowed_agents[idx]
-                respuesta = self.route(user_input, entidades, agent_name=agente_obj.name, allowed_agents=allowed_agents)
-                self._log_agent_response(agente_obj.name, respuesta)
-            except Exception as e:
-                logging.exception("Error en la coordinación de agentes")
-                return {"type": "error", "error": str(e), "mode": modo_actual}
-            # Añadir la respuesta al contexto público
-            if isinstance(respuesta, dict):
-                self._add_to_public_context("assistant", respuesta.get("response", str(respuesta)))
-                respuesta["mode"] = modo_actual
-                # Delegar lógica avanzada al middleware en modo flexible
-                return self.middleware.process(
-                    consulta=user_input,
-                    usuario=user_role,
-                    modo=modo_actual,
-                    contexto_publico=self.public_context,
-                    respuesta_agente=respuesta
-                ) # type: ignore
-            else:
-                self._add_to_public_context("assistant", str(respuesta))
-                return self.middleware.process(
-                    consulta=user_input,
-                    usuario=user_role,
-                    modo=modo_actual,
-                    contexto_publico=self.public_context,
-                    respuesta_agente={"type": "agent", "response": respuesta, "mode": modo_actual}
-                ) # type: ignore
-        else:
-            logging.debug(f"[responder] No se encontró agente válido para '{agent_name}', usando asistente general.")
-            resp = self.client.chat.completions.create(
-                model=GROQ_MODEL, # type: ignore
-                messages=[
-                    {"role": "system", "content": "Eres un chatbot asistente general. Si no puedes ayudar con la petición, responde de forma breve y educada, por ejemplo: 'Lo siento, no tengo acceso a esa información.' o 'No puedo ayudarte con eso.' Da respuestas cortas y claras."},
-                    {"role": "user", "content": user_input}
-                ]
-            )
-            self._add_to_public_context("assistant", resp.choices[0].message.content)
-            # Fallback: también se expone el modo activo
+        return entidades
+
+    def _find_agent(self, agent_name, allowed_agents):
+        agent_name_normalized = agent_name.strip().lower()
+        for agent in allowed_agents:
+            if agent.name.strip().lower() == agent_name_normalized:
+                return agent
+        return None
+
+    def _process_agent_response(self, respuesta, modo_actual, user_input, user_role):
+        if isinstance(respuesta, dict):
+            self._add_to_public_context("assistant", respuesta.get("response", str(respuesta)))
+            respuesta["mode"] = modo_actual
             return self.middleware.process(
                 consulta=user_input,
                 usuario=user_role,
                 modo=modo_actual,
                 contexto_publico=self.public_context,
-                respuesta_agente={"type": "chat", "response": resp.choices[0].message.content, "mode": modo_actual}
+                respuesta_agente=respuesta
             ) # type: ignore
+        else:
+            self._add_to_public_context("assistant", str(respuesta))
+            return self.middleware.process(
+                consulta=user_input,
+                usuario=user_role,
+                modo=modo_actual,
+                contexto_publico=self.public_context,
+                respuesta_agente={"type": "agent", "response": respuesta, "mode": modo_actual}
+            ) # type: ignore
+
+    def _process_fallback_response(self, user_input, user_role, modo_actual):
+        logging.info(f"[responder] No se encontró agente válido para '{user_input}', usando asistente general.")
+        self._log_prompt_llm({"role": "system", "content": "Eres un chatbot asistente general...", "user": user_input})
+        resp = self.client.chat.completions.create(
+            model=GROQ_MODEL, # type: ignore
+            messages=[
+                {"role": "system", "content": "Eres un chatbot asistente general. Si no puedes ayudar con la petición, responde de forma breve y educada, por ejemplo: 'Lo siento, no tengo acceso a esa información.' o 'No puedo ayudarte con eso.' Da respuestas cortas y claras."},
+                {"role": "user", "content": user_input}
+            ]
+        )
+        self._add_to_public_context("assistant", resp.choices[0].message.content)
+        return self.middleware.process(
+            consulta=user_input,
+            usuario=user_role,
+            modo=modo_actual,
+            contexto_publico=self.public_context,
+            respuesta_agente={"type": "chat", "response": resp.choices[0].message.content, "mode": modo_actual}
+        ) # type: ignore

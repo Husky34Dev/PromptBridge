@@ -10,7 +10,8 @@
           "dni": {"type": "string", "description": "Documento Nacional de Identidad del abonado"}
         },
         "required": ["dni"]
-      }
+      },
+      "http": {"method": "POST", "url": "/existe_abonado"}
     }
   },
   {
@@ -24,7 +25,8 @@
           "dni": {"type": "string", "description": "Documento Nacional de Identidad del abonado"}
         },
         "required": ["dni"]
-      }
+      },
+      "http": {"method": "POST", "url": "/direccion_abonado"}
     }
   },
   {
@@ -38,7 +40,8 @@
           "dni": {"type": "string", "description": "Documento Nacional de Identidad del abonado"}
         },
         "required": ["dni"]
-      }
+      },
+      "http": {"method": "POST", "url": "/estado_pagos"}
     }
   },
   {
@@ -52,7 +55,8 @@
           "dni": {"type": "string", "description": "Documento Nacional de Identidad del abonado"}
         },
         "required": ["dni"]
-      }
+      },
+      "http": {"method": "POST", "url": "/ultimo_pago"}
     }
   },
   {
@@ -66,7 +70,8 @@
           "dni": {"type": "string", "description": "Documento Nacional de Identidad del abonado"}
         },
         "required": ["dni"]
-      }
+      },
+      "http": {"method": "POST", "url": "/deuda_total"}
     }
   },
   {
@@ -80,7 +85,8 @@
           "dni": {"type": "string", "description": "Documento Nacional de Identidad del abonado"}
         },
         "required": ["dni"]
-      }
+      },
+      "http": {"method": "POST", "url": "/facturas_pendientes"}
     }
   },
   {
@@ -94,7 +100,8 @@
           "dni": {"type": "string", "description": "Documento Nacional de Identidad del abonado"}
         },
         "required": ["dni"]
-      }
+      },
+      "http": {"method": "POST", "url": "/todas_las_facturas"}
     }
   },
   {
@@ -118,7 +125,8 @@
           { "required": ["dni"] },
           { "required": ["poliza"] }
         ]
-      }
+      },
+      "http": {"method": "POST", "url": "/datos_abonado"}
     }
   },
   {
@@ -135,7 +143,8 @@
           "estado": {"type": "string", "description": "Estado de la incidencia (por defecto 'Abierto')"}
         },
         "required": ["dni", "ubicacion", "descripcion"]
-      }
+      },
+      "http": {"method": "POST", "url": "/crear_incidencia"}
     }
   },
   {
@@ -149,7 +158,8 @@
           "dni": {"type": "string", "description": "Documento Nacional de Identidad del abonado"}
         },
         "required": ["dni"]
-      }
+      },
+      "http": {"method": "POST", "url": "/incidencias_por_dni"}
     }
   },
   {
@@ -163,7 +173,8 @@
           "nombre": {"type": "string", "description": "Nombre de usuario"}
         },
         "required": ["nombre"]
-      }
+      },
+      "http": {"method": "POST", "url": "/incidencias_por_nombre"}
     }
   },
   {
@@ -177,7 +188,8 @@
           "ubicacion": {"type": "string", "description": "Ubicación a consultar"}
         },
         "required": ["ubicacion"]
-      }
+      },
+      "http": {"method": "POST", "url": "/incidencias_por_ubicacion"}
     }
   },
   {
@@ -193,7 +205,8 @@
           "nuevo_estado": {"type": "string", "description": "Nuevo estado de la incidencia"}
         },
         "required": ["dni", "ubicacion", "nuevo_estado"]
-      }
+      },
+      "http": {"method": "POST", "url": "/actualizar_estado_incidencia"}
     }
   },
   {
@@ -205,7 +218,8 @@
         "type": "object",
         "properties": {},
         "required": []
-      }
+      },
+      "http": {"method": "POST", "url": "/incidencias_pendientes"}
     }
   },
   {
@@ -219,7 +233,8 @@
           "direccion": {"type": "string", "description": "Dirección para consultar el clima"}
         },
         "required": ["direccion"]
-      }
+      },
+      "http": {"method": "POST", "url": "/weather_foo"}
     }
   },
   {
@@ -235,7 +250,8 @@
           "nuevo_estado": {"type": "string", "description": "Nuevo estado de la factura (ejemplo: 'Pagado' o 'Pendiente')"}
         },
         "required": ["dni", "identificador", "nuevo_estado"]
-      }
+      },
+      "http": {"method": "POST", "url": "/actualizar_factura"}
     }
   }
 ]

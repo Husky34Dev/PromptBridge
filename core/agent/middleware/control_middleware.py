@@ -40,17 +40,13 @@ class ControlMiddleware:
                         'response': content,
                         'mode': modo
                     }
-                # Si ya es tipo chat, añadir nota de contexto
-                nota_contexto = "\n\n[Nota: Respuesta enriquecida usando el contexto público. Historial reciente: "
-                ultimos = contexto_publico[-2:] if contexto_publico else []
-                resumen_ctx = "; ".join([f"{m['role']}: {m['content']}" for m in ultimos])
-                nota_contexto += resumen_ctx + "]"
+                
                 if isinstance(respuesta_agente, dict) and 'response' in respuesta_agente and respuesta_agente.get('type') == 'chat':
                     respuesta_agente = respuesta_agente.copy()
-                    respuesta_agente['response'] = (respuesta_agente['response'] or "") + nota_contexto
+                    respuesta_agente['response'] = (respuesta_agente['response'] or "")
                     return respuesta_agente
                 elif isinstance(respuesta_agente, str):
-                    return respuesta_agente + nota_contexto
+                    return respuesta_agente
                 else:
                     return respuesta_agente
             else:
