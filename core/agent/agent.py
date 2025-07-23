@@ -15,7 +15,8 @@ logging.basicConfig(filename=log_path, level=logging.DEBUG)
 with open("client_config/tools_schema.json", "r", encoding="utf-8") as f:
     tools = json.load(f)
 
-# Inicializar el ContextManager con los paths de los JSON - AHORA DESDE client_config
+patterns_path = "client_config/entity_patterns.json"
+reference_map_path = "client_config/reference_map.json"
 patterns_path = "client_config/entity_patterns.json"
 reference_map_path = "client_config/reference_map.json"
 context_manager = ContextManager(patterns_path, reference_map_path)

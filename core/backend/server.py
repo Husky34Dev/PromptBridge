@@ -144,7 +144,7 @@ async def crear_incidencia(
     # Capitalizar la primera letra de la ubicación
     ubicacion = ubicacion.strip().capitalize()
 
-    # Insertar la incidencia
+    # Inserta la incidencia en la base de datos
     run_query(
         "INSERT INTO incidencias (usuario_id, ubicacion, descripcion, estado) VALUES (?, ?, ?, ?)",
         (usuario_id, ubicacion, descripcion, estado),
@@ -211,7 +211,7 @@ async def actualizar_estado_incidencia(
     usuario_id = result[0][0]
     # Capitalizar la ubicación para evitar problemas de mayúsculas/minúsculas
     ubicacion = ubicacion.strip().capitalize()
-    # Buscar la incidencia por usuario y ubicación
+    # Busca la incidencia por usuario y ubicación
     incidencia = run_query(
         "SELECT id FROM incidencias WHERE usuario_id = ? AND ubicacion = ? ORDER BY id DESC LIMIT 1",
         (usuario_id, ubicacion)
@@ -228,7 +228,7 @@ async def actualizar_estado_incidencia(
 
 @app.post("/incidencias_pendientes", operation_id="incidencias_pendientes")
 async def incidencias_pendientes():
-    # Mostrar solo las incidencias pendientes
+    # Devuelve solo las incidencias pendientes
     result = run_query("SELECT ubicacion, descripcion, estado FROM incidencias WHERE estado = 'Pendiente'")
     return {"incidencias": [{"ubicacion": r[0], "descripcion": r[1], "estado": r[2]} for r in result]}
 

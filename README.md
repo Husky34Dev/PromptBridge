@@ -1,43 +1,87 @@
-# Generic Multi-Agent Chatbot Framework
 
-A configurable, generic multi-agent conversational framework designed to be easily customized for any client. This skeleton provides a complete foundation for building professional chatbots with custom branding, agents, tools, and deployment configuration.
+# PromptBridge: Flexible Multi-Agent Chatbot Framework
 
-## 🚀 Features
+PromptBridge es un framework conversacional multi-agente, altamente configurable y orientado a despliegues profesionales. Permite crear asistentes virtuales con lógica flexible, integración de herramientas externas, branding personalizado y despliegue sencillo.
 
-- **Generic & Configurable**: No business-specific logic, easily customizable for any use case
-- **Multi-Agent Architecture**: Orchestrator with specialized agents and intelligent routing
-- **Modern Web Interface**: Responsive UI with role-based interactions and dynamic branding
-- **Flexible Tool Integration**: Support for both local and external API tools
-- **Easy Deployment**: Docker-ready with comprehensive configuration files
-- **Professional Structure**: Clean, documented codebase following best practices
+## Características principales
 
-## 📁 Project Structure
+- Arquitectura multi-agente con orquestador y agentes especializados
+- Contexto conversacional y modos de operación configurables
+- Integración de herramientas vía API y lógica local
+- Frontend web moderno y personalizable
+- Configuración por archivos JSON para clientes, branding y herramientas
+- Listo para despliegue en Docker y entornos cloud
+
+## Estructura del proyecto
 
 ```
-├── core/                           # Core framework logic
-│   ├── config/                     # Configuration management
-│   ├── agent/                      # Agent system
-│   │   ├── agents/                 # Agent implementations
-│   │   ├── tools/                  # Tool management
-│   │   └── orchestrator.py         # Main orchestrator
-│   └── backend/                    # API backend
-├── client_config/                  # Client-specific configuration
-│   ├── branding.json               # UI branding and styling
-│   ├── agents_config.json          # Agent definitions and routing
-│   ├── tools_schema.json           # Available tools configuration
-│   ├── entity_patterns.json        # Entity extraction patterns
-│   └── reference_map.json          # Reference mappings
-├── web/                           # Frontend application
-│   ├── static/                    # Static web assets
-│   └── main.py                    # Frontend server
-├── deployment/                    # Deployment configuration
-│   ├── docker-compose.yml         # Docker composition
-│   ├── Dockerfile                 # Application container
-│   ├── requirements.txt           # Python dependencies
-│   └── .env.template              # Environment variables template
-├── logs/                          # Application logs
-└── docs/                          # Documentation
+├── core/
+│   ├── config/               # Configuración global y utilidades
+│   ├── agent/                # Orquestador, agentes y middleware
+│   │   ├── agents/           # Implementaciones de agentes
+│   │   ├── tools/            # Lógica de herramientas
+│   │   └── orchestrator.py   # Orquestador principal
+│   └── backend/              # API REST y base de datos
+├── client_config/            # Configuración específica de cliente
+│   ├── branding.json         # Branding y estilos UI
+│   ├── agents_config.json    # Definición de agentes
+│   ├── tools_schema.json     # Herramientas disponibles
+│   ├── entity_patterns.json  # Patrones de entidades
+│   └── reference_map.json    # Mapeo de referencias
+├── web/
+│   ├── static/               # Frontend web (JS, CSS, HTML)
+│   └── main.py               # Servidor FastAPI para frontend
+├── deployment/               # Docker, requirements, .env
+├── logs/                     # Logs de aplicación
+└── docs/                     # Documentación técnica
 ```
+
+## Instalación rápida
+
+1. Clona el repositorio:
+   ```bash
+   git clone https://github.com/Husky34Dev/PromptBridge.git
+   cd PromptBridge
+   ```
+2. Instala dependencias:
+   ```bash
+   pip install -r deployment/requirements.txt
+   ```
+3. Configura los archivos en `client_config/` según tu caso de uso.
+4. Ejecuta el backend y frontend:
+   ```bash
+   python -m core.backend.server
+   python web/main.py
+   ```
+5. Accede a la interfaz en `http://localhost:8080`
+
+## Personalización
+
+- Modifica `branding.json` para adaptar colores, logo y nombre de empresa.
+- Define agentes y herramientas en `agents_config.json` y `tools_schema.json`.
+- Extiende la lógica de agentes en `core/agent/agents/` y herramientas en `core/agent/tools/`.
+- Añade endpoints o lógica de negocio en `core/backend/server.py`.
+
+## Despliegue en Docker
+
+```bash
+docker-compose up --build
+```
+Configura variables en `.env.template` y adapta los archivos de despliegue según tu entorno.
+
+## API principal
+
+- `POST /api/chat` — Consulta principal del chatbot
+- `GET /api/branding` — Configuración visual
+- `GET /api/health` — Health check
+
+## Contribución y soporte
+
+¿Quieres colaborar? Haz un fork, crea tu rama y envía un pull request. Para soporte, abre un issue en GitHub.
+
+---
+
+PromptBridge es ideal para empresas que buscan asistentes virtuales flexibles, seguros y personalizables. ¡Listo para producción y fácil de adaptar a cualquier cliente!
 
 ## 🛠️ Quick Start
 

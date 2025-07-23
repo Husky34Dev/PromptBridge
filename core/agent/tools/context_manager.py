@@ -88,9 +88,3 @@ class ContextManager:
         """
         self.context.clear()
 
-# Ejemplo de uso:
-# patterns_path = 'client_config/entity_patterns.json'
-# reference_map_path = 'client_config/reference_map.json'
-# cm = ContextManager(patterns_path, reference_map_path)
-# cm.extract_and_update('facturas dni 12345678A')
-# cm.resolve_reference('todos los datos de este abonado')
