@@ -1,6 +1,0 @@
-fastapi
-uvicorn[standard]
-sse-starlette
-fastapi-mcp
-huggingface_hub[mcp]>=0.32.0
-python-dotenv
