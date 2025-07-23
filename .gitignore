@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -93,3 +94,6 @@ Thumbs.db
 agent_debug.log
 server.log
 router_debug.log
+=======
+.env
+>>>>>>> 204d1706671fe153fe6816ba80b9eff238978b57
